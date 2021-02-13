@@ -9,8 +9,10 @@ function makeResponsive() {
     svgArea.remove();
   }
 
-  var svgWidth = 960;
-  var svgHeight = 600;
+  // svg params
+  var svgHeight = window.innerHeight;
+  var svgWidth = window.innerWidth;
+  
 
   var margin = {
     top: 20,
@@ -26,7 +28,8 @@ function makeResponsive() {
   var svg = d3.select("#scatter")
     .append("svg")
     .attr("width", svgWidth)
-    .attr("height", svgHeight);
+    .attr("height", svgHeight)
+    .attr('class', "chart");
 
   var chartGroup = svg.append("g")
     .attr("transform", `translate(${margin.left}, ${margin.top})`);
@@ -89,7 +92,7 @@ function makeResponsive() {
 
   // function used for updating circles group with a transition to
   // new circles
-  function renderCircles(circlesGroup, newXScale, chosenXAxis, newYScale, chosenYAxis) {
+  function renderXCircles(circlesGroup, newXScale, chosenXAxis, newYScale, chosenYAxis) {
 
     circlesGroup.transition()
       .duration(1000)
@@ -100,7 +103,30 @@ function makeResponsive() {
 
    // function used for updating circles text group with a transition to
   // new circles
-  function renderText(circlesTextGroup, newXScale, chosenXAxis, newYScale, chosenYAxis) {
+  function renderXText(circlesTextGroup, newXScale, chosenXAxis, newYScale, chosenYAxis) {
+
+    circlesTextGroup.transition()
+      .duration(1000)
+      .attr("dx", d => newXScale(d[chosenXAxis]))
+      .attr("dy", d => newYScale(d[chosenYAxis]))
+      .attr("text-anchor", "middle");
+    return circlesTextGroup;
+  }
+
+    // function used for updating circles group with a transition to
+  // new circles
+  function renderYCircles(circlesGroup, newXScale, chosenXAxis, newYScale, chosenYAxis) {
+
+    circlesGroup.transition()
+      .duration(1000)
+      .attr("cx", d => newXScale(d[chosenXAxis]))
+      .attr("cy", d => newYScale(d[chosenYAxis]));
+    return circlesGroup;
+  }
+
+   // function used for updating circles text group with a transition to
+  // new circles
+  function renderYText(circlesTextGroup, newXScale, chosenXAxis, newYScale, chosenYAxis) {
 
     circlesTextGroup.transition()
       .duration(1000)
@@ -231,7 +257,7 @@ function makeResponsive() {
 
     // Create group for three x-axis labels
     var xlabelsGroup = chartGroup.append("g")
-      .attr("transform", `translate(${width / 2}, ${height + 20})`);
+      .attr("transform", `translate(${width / 2}, ${height})`);
 
     var povertyLabel = xlabelsGroup.append("text")
       .attr("x", 0)
@@ -245,14 +271,14 @@ function makeResponsive() {
       .attr("y", 40)
       .attr("value", "age") // value to grab for event listener
       .classed("inactive", true)
-      .text("Age (Median");
+      .text("Age (Median)");
 
     var incomeLabel = xlabelsGroup.append("text")
       .attr("x", 0)
       .attr("y", 60)
       .attr("value", "income") // value to grab for event listener
       .classed("inactive", true)
-      .text("Household Income (Median");
+      .text("Household Income (Median)");
 
 
     // Create group for three y-axis labels
@@ -266,7 +292,6 @@ function makeResponsive() {
       .attr("x", 0 - (height / 2))
       .attr("value", "healthcare")
       .attr("dy", "1em")
-      .classed("axis-text", true)
       .text("Lacks Healthcare (%)")
       .classed("active", true);
 
@@ -277,7 +302,6 @@ function makeResponsive() {
       .attr("x", 0 - (height / 2))
       .attr("value", "smokes")
       .attr("dy", "1em")
-      .classed("axis-text", true)
       .text("Smokes (%)")
       .classed("inactive", true);
 
@@ -288,7 +312,6 @@ function makeResponsive() {
       .attr("x", 0 - (height / 2))
       .attr("value", "obesity")
       .attr("dy", "1em")
-      .classed("axis-text", true)
       .text("Obese (%)")
       .classed("inactive", true)
 
@@ -314,10 +337,10 @@ function makeResponsive() {
           xAxis = renderXAxes(xLinearScale, xAxis);
 
           // updates circles with new  values
-          circlesGroup = renderCircles(circlesGroup, xLinearScale, chosenXAxis, yLinearScale, chosenYAxis);
+          circlesGroup = renderXCircles(circlesGroup, xLinearScale, chosenXAxis, yLinearScale, chosenYAxis);
 
           // updates circles text with new  values
-          circlesTextGroup = renderText(circlesTextGroup, xLinearScale, chosenXAxis, yLinearScale, chosenYAxis);
+          circlesTextGroup = renderXText(circlesTextGroup, xLinearScale, chosenXAxis, yLinearScale, chosenYAxis);
 
           // updates tooltips with new info
           circlesGroup = updateToolTip(chosenXAxis, chosenYAxis, circlesGroup, circlesTextGroup);
@@ -357,16 +380,19 @@ function makeResponsive() {
               .classed("inactive", false);
           }
         }
+      
+      });
+  
 
         //y axis labels event listener
         ylabelsGroup.selectAll("text")
           .on("click", function () {
             // get value of selection
-            var yvalue = d3.select(this).attr("value");
-            if (yvalue !== chosenYAxis) {
+            var value = d3.select(this).attr("value");
+            if (value !== chosenYAxis) {
 
               // replaces chosenYAxis with value
-              chosenYAxis = yvalue;
+              chosenYAxis = value;
 
               // functions here found above csv import
               // updates y scale for new data
@@ -376,55 +402,57 @@ function makeResponsive() {
               yAxis = renderYAxes(yLinearScale, yAxis);
 
               // updates circles with new y values
-              circlesGroup = renderCircles(circlesGroup, xLinearScale, chosenXAxis, yLinearScale, chosenYAxis);
+              circlesGroup = renderYCircles(circlesGroup, xLinearScale, chosenXAxis, yLinearScale, chosenYAxis);
 
               // updates circles text with new y values
-              circlesTextGroup = renderText(circlesTextGroup, xLinearScale, chosenXAxis, yLinearScale, chosenYAxis);
+              circlesTextGroup = renderYText(circlesTextGroup, xLinearScale, chosenXAxis, yLinearScale, chosenYAxis);
 
               // updates tooltips with new info
-              circlesGroup = updateToolTip(chosenXAxis, circlesGroup, chosenYAxis, circlesTextGroup);
+              circlesGroup = updateToolTip(chosenXAxis, chosenYAxis, circlesGroup, circlesTextGroup);
 
               // changes classes to change bold text
-              if (chosenYAxis === "healthcare") {
+              if (chosenYAxis === "obesity") {
+                obesityLabel
+                  .classed("active", true)
+                  .classed("inactive", false)
                 smokersLabel
                   .classed("active", false)
-                  .classed("inactive", true);
+                  .classed("inactive", true)
                 healthcareLabel
-                  .classed("active", true)
-                  .classed("inactive", false);
-                obesityLabel
                   .classed("active", false)
-                  .classed("inactive", true);
+                  .classed("inactive", true)
+                
               }
               else if (chosenYAxis === 'smokes') {
                 smokersLabel
                   .classed("active", true)
-                  .classed("inactive", false);
+                  .classed("inactive", false)
                 healthcareLabel
                   .classed("active", false)
-                  .classed("inactive", true);
+                  .classed("inactive", true)
                 obesityLabel
                   .classed("active", false)
-                  .classed("inactive", true);
+                  .classed("inactive", true)
               }
               else {
+                healthcareLabel
+                  .classed("active", true)
+                  .classed("inactive", false)
                 smokersLabel
                   .classed("active", false)
-                  .classed("inactive", true);
-                healthcareLabel
-                  .classed("active", false)
-                  .classed("inactive", true);
+                  .classed("inactive", true)
                 obesityLabel
-                  .classed("active", true)
-                  .classed("inactive", false);
+                  .classed("active", false)
+                  .classed("inactive", true)
+                
+              
               }
             }
-          });
+          });  
+          
+  });
+}
 
-
-          });
-  })
-};
 
 //this function is called when browser loads
 makeResponsive();
